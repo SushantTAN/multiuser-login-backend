@@ -4,7 +4,6 @@
   "description": "multiuser token system",
   "main": "index.js",
   "scripts": {
-    
     "start": "node index.js"
   },
   "author": "sushnat",
