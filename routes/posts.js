@@ -8,7 +8,7 @@ router.get('/', verify, (req, res) => {
 });
 
 //creating a post
-router.post('/update/:id',  (req, res) => {
+router.post('/update/:id', (req, res) => {
 
     const newPost = new Posts({
         description: req.body.description,
@@ -19,8 +19,8 @@ router.post('/update/:id',  (req, res) => {
     });
 
     newPost.save()
-    .then(() => res.send('post added!'))
-    .catch(err => res.status(400).send('Error: ' + err))
+        .then(() => res.send('post added!'))
+        .catch(err => res.status(400).send('Error: ' + err))
 
 
     // User.findByIdAndUpdate(req.params.id)
@@ -35,10 +35,10 @@ router.post('/update/:id',  (req, res) => {
 
 //get myposts
 router.get('/myposts/:ownerid', (req, res) => {
-    Posts.find({$or:[{ownerid: req.params.ownerid}]})
+    Posts.find({ $or: [{ ownerid: req.params.ownerid }] })
         .then(posts => res.send(posts))
         .catch(err => res.send("error: " + err))
-} );
+});
 
 //delete myposts
 router.delete('/myposts/delete/:id', (req, res) => {
@@ -49,10 +49,17 @@ router.delete('/myposts/delete/:id', (req, res) => {
 
 //get newsfeed
 router.post('/newsfeed', (req, res) => {
-    const arr = req.body.myfollowing.map(c => ({ownerid: c}))
-    Posts.find({$or: arr})
-        .then(posts => res.send(posts))
-        .catch(err => res.status(400).send("fetch following err:" + err))
+    const arr = req.body.myfollowing.map(c => ({ ownerid: c }));
+    if (arr.length > 0) {
+        Posts.find({ $or: arr })
+            .then(posts => res.send(posts))
+            .catch(err => {
+                console.log(err);
+                res.status(400).send("fetch following err:" + err)
+            })
+    } else {
+        res.send([]);
+    }
 });
 
 

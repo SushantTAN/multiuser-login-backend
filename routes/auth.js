@@ -2,19 +2,21 @@ const router = require('express').Router();
 const User = require('../model/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const {registerValidation, loginValidation} = require('./validation');
+const { registerValidation, loginValidation } = require('./validation');
 
 
 //REgister
-router.post('/register', async (req, res) =>{
+router.post('/register', async (req, res) => {
 
     //Validating data before creating user
-    const {error} = registerValidation(req.body);
-    if(error) return res.status(400).send(error.details[0].message);
+    const { error } = registerValidation(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
 
     //check if user is already in database
-    const emailExists = await User.findOne({email: req.body.email});
-    if(emailExists) return res.status(400).send('Email already exists');
+    const emailExists = await User.findOne({ email: req.body.email });
+    console.log(emailExists);
+
+    if (emailExists) return res.status(400).send('Email already exists');
 
     //hash password
     const salt = await bcrypt.genSalt(10);
@@ -26,37 +28,38 @@ router.post('/register', async (req, res) =>{
         email: req.body.email,
         password: hashedPassword
     });
-        try{
-            const savedUser = await user.save();
-            res.send({user: user._id});
-        }
-        catch{
-            err => res.status(400).send(err);
-        }
-    
+    try {
+        const savedUser = await user.save();
+        res.send({ user: user._id });
+    }
+    catch (err) {
+        console.log("errrr", err);
+        res.status(400).send(err);
+    }
+
 });
 
 
 //login
 router.post('/login', async (req, res) => {
     //Validating data before logging in
-    const {error} = loginValidation(req.body);
-    if(error) return res.status(400).send(error.details[0].message);
+    const { error } = loginValidation(req.body);
+    if (error) return res.status(400).send(error.details[0].message);
 
     //check if email exists
-    const user = await User.findOne({email: req.body.email});
-    if(!user) return res.status(400).send('Email is not found');
+    const user = await User.findOne({ email: req.body.email });
+    if (!user) return res.status(400).send('Email is not found');
 
     //check password
     const validPass = await bcrypt.compare(req.body.password, user.password);
-    if(!validPass) return res.status(400).send('Invalid password');
+    if (!validPass) return res.status(400).send('Invalid password');
 
     //create and assign a token
     const token = jwt.sign({
         name: user.name,
         _id: user._id,
         following: user.following
-        
+
     }, process.env.TOKEN_SECRET);
     res.header('auth-token', token).send(token);
 
@@ -68,7 +71,7 @@ router.post('/login', async (req, res) => {
 //follow push followers array on who to follow
 router.post('/follow', (req, res) => {
     User.findByIdAndUpdate(req.body.to)
-        .then( p => {
+        .then(p => {
             p.followers.push(req.body.from);
             res.send('followed');
 
@@ -80,11 +83,11 @@ router.post('/follow', (req, res) => {
 //following push following array of logged user
 router.post('/following', (req, res) => {
     User.findByIdAndUpdate(req.body.from)
-        .then( q => {
-        q.following.push(req.body.to);
-        res.send('followed');
+        .then(q => {
+            q.following.push(req.body.to);
+            res.send('followed');
 
-        q.save();
+            q.save();
         })
         .catch(err => res.status(400).send(err));
 });
@@ -92,7 +95,7 @@ router.post('/following', (req, res) => {
 //unfollow filter followers array of whom to unfollow
 router.post('/unfollow', (req, res) => {
     User.findByIdAndUpdate(req.body.to)
-        .then( p => {
+        .then(p => {
             p.followers = p.followers.filter(el => el !== req.body.from);
             res.send('unfollowed');
 
@@ -104,11 +107,11 @@ router.post('/unfollow', (req, res) => {
 //unfollow filter following array of logged user
 router.post('/unfollowing', (req, res) => {
     User.findByIdAndUpdate(req.body.from)
-        .then( q => {
-        q.following = q.following.filter(el => el !== req.body.to);
-        res.send('unfollowed');
+        .then(q => {
+            q.following = q.following.filter(el => el !== req.body.to);
+            res.send('unfollowed');
 
-        q.save();
+            q.save();
         })
         .catch(err => res.status(400).send(err));
 });
@@ -126,6 +129,6 @@ router.get('/loggeduser/:id', (req, res) => {
         .then(user => res.send(user))
         .catch(err => res.status(400).send(err))
 });
-    
+
 
 module.exports = router;
